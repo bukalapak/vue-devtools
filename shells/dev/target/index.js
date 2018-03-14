@@ -1,5 +1,6 @@
 import Vue from 'vue'
 import store from './store'
+import store1 from './store1'
 import Target from './Target.vue'
 import Other from './Other.vue'
 import Counter from './Counter.vue'
@@ -7,14 +8,15 @@ import NativeTypes from './NativeTypes.vue'
 import Events from './Events.vue'
 import MyClass from './MyClass.js'
 import Router from './Router.vue'
+import Random from './Random.vue';
 import router from './router'
 
-let items = []
+const items = []
 for (var i = 0; i < 100; i++) {
   items.push({ id: i })
 }
 
-let circular = {}
+const circular = {}
 circular.self = circular
 
 new Vue({
@@ -23,7 +25,7 @@ new Vue({
   render (h) {
     return h('div', null, [
       h(Counter),
-      h(Target, {props:{msg: 'hi', ins: new MyClass()}}),
+      h(Target, { props: { msg: 'hi', ins: new MyClass() }}),
       h(Other),
       h(Events),
       h(NativeTypes),
@@ -37,6 +39,18 @@ new Vue({
     }
   }
 }).$mount('#app')
+
+// another vue app with store
+new Vue({
+  store: store1,
+  render (h) {
+    return h('div', null, [
+      h('h2', 'Second app with store!'),
+      h(Random)
+    ])
+  }
+}).$mount('#secondApp')
+console.log('Second store -------->', store1);
 
 // custom element instance
 const ce = document.querySelector('#shadow')

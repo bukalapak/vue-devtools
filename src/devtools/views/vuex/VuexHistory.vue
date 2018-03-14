@@ -157,13 +157,16 @@ export default {
   computed: {
     ...mapState('vuex', [
       'enabled',
-      'history',
       'lastCommit',
       'inspectedIndex',
       'activeIndex',
       'filterRegex',
       'filterRegexInvalid'
     ]),
+
+    ...mapState('vuex', {
+      history: state => state.history[state.inspectedStoreIndex]
+    }),
 
     ...mapGetters('vuex', [
       'filteredHistory'

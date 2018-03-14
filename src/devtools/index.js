@@ -36,14 +36,18 @@ if (isChrome) {
 }
 
 Vue.options.renderError = (h, e) => {
-  return h('pre', {
-    style: {
-      backgroundColor: 'red',
-      color: 'white',
-      fontSize: '12px',
-      padding: '10px'
-    }
-  }, e.stack)
+  return h(
+    'pre',
+    {
+      style: {
+        backgroundColor: 'red',
+        color: 'white',
+        fontSize: '12px',
+        padding: '10px'
+      }
+    },
+    e.stack
+  )
 }
 
 let app = null
@@ -80,10 +84,7 @@ function initApp (shell) {
     window.bridge = bridge
 
     bridge.once('ready', version => {
-      store.commit(
-        'SHOW_MESSAGE',
-        'Ready. Detected Vue ' + version + '.'
-      )
+      store.commit('SHOW_MESSAGE', 'Ready. Detected Vue ' + version + '.')
       bridge.send('vuex:toggle-recording', store.state.vuex.enabled)
       bridge.send('events:toggle-recording', store.state.events.enabled)
 
@@ -93,10 +94,7 @@ function initApp (shell) {
     })
 
     bridge.once('proxy-fail', () => {
-      store.commit(
-        'SHOW_MESSAGE',
-        'Proxy injection failed.'
-      )
+      store.commit('SHOW_MESSAGE', 'Proxy injection failed.')
     })
 
     bridge.on('flush', payload => {
@@ -112,6 +110,7 @@ function initApp (shell) {
     })
 
     bridge.on('vuex:init', snapshot => {
+      console.log('vuex init----->', snapshot)
       store.commit('vuex/INIT', snapshot)
     })
 
@@ -169,11 +168,12 @@ function inspectInstance (id) {
   bridge.send('select-instance', id)
   store.commit('SWITCH_TAB', 'components')
   const instance = store.state.components.instancesMap[id]
-  instance && store.dispatch('components/toggleInstance', {
-    instance,
-    expanded: true,
-    parent: true
-  })
+  instance &&
+    store.dispatch('components/toggleInstance', {
+      instance,
+      expanded: true,
+      parent: true
+    })
 }
 
 // Pane visibility management

@@ -12,9 +12,12 @@ const state = {
   hasVuex: false,
   initial: null,
   base: null, // type Snapshot = { state: {}, getters: {} }
+  inspectedStoreIndex: 0,
   inspectedIndex: -1,
   activeIndex: -1,
-  history: [/* { mutation, timestamp, snapshot } */],
+  history: [
+    /* [ { mutation, timestamp, snapshot } ] */
+  ],
   initialCommit: Date.now(),
   lastCommit: Date.now(),
   filter: '',
@@ -23,45 +26,46 @@ const state = {
 }
 
 const mutations = {
-  'INIT' (state, snapshot) {
-    state.initial = state.base = snapshot
+  INIT (state, snapshots) {
+    state.initial = state.base = snapshots
     state.hasVuex = true
     reset(state)
   },
-  'RECEIVE_MUTATION' (state, entry) {
-    state.history.push(entry)
+  RECEIVE_MUTATION (state, entry) {
+    const storeHistory = state.history[entry.storeIndex]
+    storeHistory.push(entry)
     if (!state.filter) {
-      state.inspectedIndex = state.activeIndex = state.history.length - 1
+      state.inspectedIndex = state.activeIndex = storeHistory.length - 1
     }
   },
-  'COMMIT_ALL' (state) {
+  COMMIT_ALL (state) {
     state.base = state.history[state.history.length - 1].snapshot
     state.lastCommit = Date.now()
     reset(state)
   },
-  'REVERT_ALL' (state) {
+  REVERT_ALL (state) {
     reset(state)
   },
-  'COMMIT' (state, index) {
+  COMMIT (state, index) {
     state.base = state.history[index].snapshot
     state.lastCommit = Date.now()
     state.history = state.history.slice(index + 1)
     state.inspectedIndex = -1
   },
-  'REVERT' (state, index) {
+  REVERT (state, index) {
     state.history = state.history.slice(0, index)
     state.inspectedIndex = state.history.length - 1
   },
-  'INSPECT' (state, index) {
+  INSPECT (state, index) {
     state.inspectedIndex = index
   },
-  'TIME_TRAVEL' (state, index) {
+  TIME_TRAVEL (state, index) {
     state.activeIndex = index
   },
-  'TOGGLE' (state) {
-    storage.set(ENABLED_KEY, state.enabled = !state.enabled)
+  TOGGLE (state) {
+    storage.set(ENABLED_KEY, (state.enabled = !state.enabled))
   },
-  'UPDATE_FILTER' (state, filter) {
+  UPDATE_FILTER (state, filter) {
     state.filter = filter
     const regexParts = filter.match(REGEX_RE)
     if (regexParts !== null) {
@@ -78,11 +82,20 @@ const mutations = {
       state.filterRegexInvalid = false
       state.filterRegex = new RegExp(escapeStringForRegExp(filter), 'i')
     }
+  },
+  CHANGE_STORE (state, index) {
+    state.inspectedStoreIndex = index
+    state.inspectedIndex = state.history[index].length - 1
   }
 }
 
 function reset (state) {
-  state.history = []
+  const stores = state.initial
+  state.history = stores.reduce((arr, store, idx) => {
+    arr.push([])
+    return arr
+  }, [])
+
   state.inspectedIndex = state.activeIndex = -1
 }
 
@@ -91,9 +104,12 @@ function escapeStringForRegExp (str) {
 }
 
 const getters = {
-  inspectedState ({ base, history, inspectedIndex }) {
-    const entry = history[inspectedIndex]
+  inspectedState ({ base, history, inspectedIndex, inspectedStoreIndex }) {
     const res = {}
+    let entry
+    try {
+      entry = history[inspectedStoreIndex][inspectedIndex]
+    } catch (e) {}
 
     if (entry) {
       res.mutation = {
@@ -102,7 +118,13 @@ const getters = {
       }
     }
 
-    const snapshot = parse(entry ? entry.snapshot : base)
+    let snapshot
+    if (entry) {
+      snapshot = parse(entry.snapshot)
+    } else if (base) {
+      snapshot = parse(base[inspectedStoreIndex])
+    }
+
     if (snapshot) {
       res.state = snapshot.state
       res.getters = snapshot.getters
@@ -111,8 +133,13 @@ const getters = {
     return res
   },
 
-  filteredHistory ({ history, filterRegex }) {
-    return history.filter(entry => filterRegex.test(entry.mutation.type))
+  filteredHistory ({ history, inspectedStoreIndex, filterRegex }) {
+    const inspectedHistory = history[inspectedStoreIndex] || []
+    return inspectedHistory.filter(entry => filterRegex.test(entry.mutation.type))
+  },
+
+  storeCount ({ initial }) {
+    return initial ? initial.length : 0
   }
 }
 
