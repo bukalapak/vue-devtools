@@ -8,15 +8,15 @@ import NativeTypes from './NativeTypes.vue'
 import Events from './Events.vue'
 import MyClass from './MyClass.js'
 import Router from './Router.vue'
-import Random from './Random.vue';
+import Random from './Random.vue'
 import router from './router'
 
-const items = []
+let items = []
 for (var i = 0; i < 100; i++) {
   items.push({ id: i })
 }
 
-const circular = {}
+let circular = {}
 circular.self = circular
 
 new Vue({
@@ -25,7 +25,7 @@ new Vue({
   render (h) {
     return h('div', null, [
       h(Counter),
-      h(Target, { props: { msg: 'hi', ins: new MyClass() }}),
+      h(Target, {props:{msg: 'hi', ins: new MyClass()}}),
       h(Other),
       h(Events),
       h(NativeTypes),
@@ -50,7 +50,6 @@ new Vue({
     ])
   }
 }).$mount('#secondApp')
-console.log('Second store -------->', store1);
 
 // custom element instance
 const ce = document.querySelector('#shadow')

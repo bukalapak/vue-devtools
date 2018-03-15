@@ -1,7 +1,6 @@
 import { stringify, parse } from 'src/util'
 
 export function initVuexBackend (hook, bridge) {
-  // const store = hook.store
   const stores = hook.stores
 
   let recording = true

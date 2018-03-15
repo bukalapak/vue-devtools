@@ -78,10 +78,6 @@ export function installHook (window) {
     }
   })
 
-  // hook.once('vuex:init', store => {
-  //   hook.store = store
-  // })
-
   hook.on('vuex:init', store => {
     hook.store = store
     hook.stores.push(store)

@@ -26,46 +26,46 @@ const state = {
 }
 
 const mutations = {
-  INIT (state, snapshots) {
+  'INIT' (state, snapshots) {
     state.initial = state.base = snapshots
     state.hasVuex = true
     reset(state)
   },
-  RECEIVE_MUTATION (state, entry) {
+  'RECEIVE_MUTATION' (state, entry) {
     const storeHistory = state.history[entry.storeIndex]
     storeHistory.push(entry)
     if (!state.filter) {
       state.inspectedIndex = state.activeIndex = storeHistory.length - 1
     }
   },
-  COMMIT_ALL (state) {
+  'COMMIT_ALL' (state) {
     state.base = state.history[state.history.length - 1].snapshot
     state.lastCommit = Date.now()
     reset(state)
   },
-  REVERT_ALL (state) {
+  'REVERT_ALL' (state) {
     reset(state)
   },
-  COMMIT (state, index) {
+  'COMMIT' (state, index) {
     state.base = state.history[index].snapshot
     state.lastCommit = Date.now()
     state.history = state.history.slice(index + 1)
     state.inspectedIndex = -1
   },
-  REVERT (state, index) {
+  'REVERT' (state, index) {
     state.history = state.history.slice(0, index)
     state.inspectedIndex = state.history.length - 1
   },
-  INSPECT (state, index) {
+  'INSPECT' (state, index) {
     state.inspectedIndex = index
   },
-  TIME_TRAVEL (state, index) {
+  'TIME_TRAVEL' (state, index) {
     state.activeIndex = index
   },
-  TOGGLE (state) {
+  'TOGGLE' (state) {
     storage.set(ENABLED_KEY, (state.enabled = !state.enabled))
   },
-  UPDATE_FILTER (state, filter) {
+  'UPDATE_FILTER' (state, filter) {
     state.filter = filter
     const regexParts = filter.match(REGEX_RE)
     if (regexParts !== null) {
@@ -83,7 +83,7 @@ const mutations = {
       state.filterRegex = new RegExp(escapeStringForRegExp(filter), 'i')
     }
   },
-  CHANGE_STORE (state, index) {
+  'CHANGE_STORE' (state, index) {
     state.inspectedStoreIndex = index
     state.inspectedIndex = state.history[index].length - 1
   }
