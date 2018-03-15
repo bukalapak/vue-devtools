@@ -473,7 +473,7 @@ const fnTypeRE = /^(?:function|class) (\w+)/
 function getPropType (type) {
   const match = type.toString().match(fnTypeRE)
   return typeof type === 'function'
-    ? (match && match[1]) || 'any'
+    ? match && match[1] || 'any'
     : 'any'
 }
 
