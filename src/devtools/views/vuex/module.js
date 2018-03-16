@@ -50,9 +50,10 @@ const mutations = {
     reset(state)
   },
   'COMMIT' (state, index) {
-    state.base = state.history[index].snapshot
+    const history = state.history[state.inspectedStoreIndex]
+    state.base[state.inspectedStoreIndex] = history[index].snapshot
     state.lastCommit = Date.now()
-    state.history = state.history.slice(index + 1)
+    history.splice(0, index + 1)
     state.inspectedIndex = -1
   },
   'REVERT' (state, index) {
