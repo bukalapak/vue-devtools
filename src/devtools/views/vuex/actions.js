@@ -30,7 +30,7 @@ export function revert ({ commit, state }, entry) {
   const index = history.indexOf(entry)
   if (index > -1) {
     commit('REVERT', index)
-    travelTo(state, commit, state.history.length - 1)
+    travelTo(state, commit, state.history[state.inspectedStoreIndex].length - 1)
   }
 }
 
@@ -63,10 +63,15 @@ export function changeStore ({ commit }, index) {
 }
 
 function travelTo (state, commit, index) {
-  const { history, base, inspectedIndex } = state
-  const targetSnapshot = index > -1 ? history[index].snapshot : base
+  const { history, base, inspectedIndex, inspectedStoreIndex } = state
+  const storeHistory = history[inspectedStoreIndex]
+  const targetSnapshot = index > -1 ? storeHistory[index].snapshot : base[inspectedStoreIndex]
 
-  bridge.send('vuex:travel-to-state', stringify(parse(targetSnapshot).state))
+  bridge.send('vuex:travel-to-state', {
+    storeIndex: inspectedStoreIndex,
+    state: stringify(parse(targetSnapshot).state)
+  })
+
   if (index !== inspectedIndex) {
     commit('INSPECT', index)
   }

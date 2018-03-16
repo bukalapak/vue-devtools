@@ -47,8 +47,10 @@ export function initVuexBackend (hook, bridge) {
   })
 
   // devtool -> application
-  bridge.on('vuex:travel-to-state', state => {
-    hook.emit('vuex:travel-to-state', parse(state, true))
+  bridge.on('vuex:travel-to-state', ({ storeIndex, state }) => {
+    const store = hook.stores[storeIndex]
+    store.replaceState(parse(state, true))
+    // hook.emit('vuex:travel-to-state', parse(state, true))
   })
 
   bridge.on('vuex:import-state', state => {

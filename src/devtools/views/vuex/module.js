@@ -14,7 +14,7 @@ const state = {
   base: null, // type Snapshot = { state: {}, getters: {} }
   inspectedStoreIndex: 0,
   inspectedIndex: -1,
-  activeIndex: -1,
+  activeIndex: null,
   history: [
     /* [ { mutation, timestamp, snapshot } ] */
   ],
@@ -32,10 +32,13 @@ const mutations = {
     reset(state)
   },
   'RECEIVE_MUTATION' (state, entry) {
-    const storeHistory = state.history[entry.storeIndex]
+    const { storeIndex } = entry
+    const storeHistory = state.history[storeIndex]
+
     storeHistory.push(entry)
-    if (!state.filter) {
-      state.inspectedIndex = state.activeIndex = storeHistory.length - 1
+
+    if (!state.filter && storeIndex === state.inspectedStoreIndex) {
+      state.inspectedIndex = state.activeIndex[storeIndex] = storeHistory.length - 1
     }
   },
   'COMMIT_ALL' (state) {
@@ -53,14 +56,15 @@ const mutations = {
     state.inspectedIndex = -1
   },
   'REVERT' (state, index) {
-    state.history = state.history.slice(0, index)
-    state.inspectedIndex = state.history.length - 1
+    const history = state.history[state.inspectedStoreIndex]
+    history.splice(index, history.length - index)
+    state.inspectedIndex = history.length - 1
   },
   'INSPECT' (state, index) {
     state.inspectedIndex = index
   },
   'TIME_TRAVEL' (state, index) {
-    state.activeIndex = index
+    state.activeIndex[state.inspectedStoreIndex] = index
   },
   'TOGGLE' (state) {
     storage.set(ENABLED_KEY, (state.enabled = !state.enabled))
@@ -91,12 +95,9 @@ const mutations = {
 
 function reset (state) {
   const stores = state.initial
-  state.history = stores.reduce((arr, store, idx) => {
-    arr.push([])
-    return arr
-  }, [])
-
+  state.history = stores.map(s => [])
   state.inspectedIndex = state.activeIndex = -1
+  state.activeIndex = stores.map(s => -1)
 }
 
 function escapeStringForRegExp (str) {
@@ -133,9 +134,12 @@ const getters = {
     return res
   },
 
-  filteredHistory ({ history, inspectedStoreIndex, filterRegex }) {
-    const inspectedHistory = history[inspectedStoreIndex] || []
-    return inspectedHistory.filter(entry => filterRegex.test(entry.mutation.type))
+  inspectedStore ({ history, inspectedStoreIndex }) {
+    return history[inspectedStoreIndex] || []
+  },
+
+  filteredHistory ({ history, inspectedStoreIndex, filterRegex }, getters) {
+    return getters.inspectedStore.filter(entry => filterRegex.test(entry.mutation.type))
   },
 
   storeCount ({ initial }) {
