@@ -17,6 +17,8 @@ export function installHook (window) {
   const hook = {
     Vue: null,
 
+    stores: [],
+
     on (event, fn) {
       event = '$' + event
       ;(listeners[event] || (listeners[event] = [])).push(fn)
@@ -76,8 +78,9 @@ export function installHook (window) {
     }
   })
 
-  hook.once('vuex:init', store => {
+  hook.on('vuex:init', store => {
     hook.store = store
+    hook.stores.push(store)
   })
 
   Object.defineProperty(window, '__VUE_DEVTOOLS_GLOBAL_HOOK__', {

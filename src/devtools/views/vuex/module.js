@@ -12,9 +12,12 @@ const state = {
   hasVuex: false,
   initial: null,
   base: null, // type Snapshot = { state: {}, getters: {} }
+  inspectedStoreIndex: 0,
   inspectedIndex: -1,
-  activeIndex: -1,
-  history: [/* { mutation, timestamp, snapshot } */],
+  activeIndex: null,
+  history: [
+    /* [ { mutation, timestamp, snapshot } ] */
+  ],
   initialCommit: Date.now(),
   lastCommit: Date.now(),
   filter: '',
@@ -23,15 +26,19 @@ const state = {
 }
 
 const mutations = {
-  'INIT' (state, snapshot) {
-    state.initial = state.base = snapshot
+  'INIT' (state, snapshots) {
+    state.initial = state.base = snapshots
     state.hasVuex = true
     reset(state)
   },
   'RECEIVE_MUTATION' (state, entry) {
-    state.history.push(entry)
-    if (!state.filter) {
-      state.inspectedIndex = state.activeIndex = state.history.length - 1
+    const { storeIndex } = entry
+    const storeHistory = state.history[storeIndex]
+
+    storeHistory.push(entry)
+
+    if (!state.filter && storeIndex === state.inspectedStoreIndex) {
+      state.inspectedIndex = state.activeIndex[storeIndex] = storeHistory.length - 1
     }
   },
   'COMMIT_ALL' (state) {
@@ -43,23 +50,25 @@ const mutations = {
     reset(state)
   },
   'COMMIT' (state, index) {
-    state.base = state.history[index].snapshot
+    const history = state.history[state.inspectedStoreIndex]
+    state.base[state.inspectedStoreIndex] = history[index].snapshot
     state.lastCommit = Date.now()
-    state.history = state.history.slice(index + 1)
+    history.splice(0, index + 1)
     state.inspectedIndex = -1
   },
   'REVERT' (state, index) {
-    state.history = state.history.slice(0, index)
-    state.inspectedIndex = state.history.length - 1
+    const history = state.history[state.inspectedStoreIndex]
+    history.splice(index, history.length - index)
+    state.inspectedIndex = history.length - 1
   },
   'INSPECT' (state, index) {
     state.inspectedIndex = index
   },
   'TIME_TRAVEL' (state, index) {
-    state.activeIndex = index
+    state.activeIndex[state.inspectedStoreIndex] = index
   },
   'TOGGLE' (state) {
-    storage.set(ENABLED_KEY, state.enabled = !state.enabled)
+    storage.set(ENABLED_KEY, (state.enabled = !state.enabled))
   },
   'UPDATE_FILTER' (state, filter) {
     state.filter = filter
@@ -78,12 +87,18 @@ const mutations = {
       state.filterRegexInvalid = false
       state.filterRegex = new RegExp(escapeStringForRegExp(filter), 'i')
     }
+  },
+  'CHANGE_STORE' (state, index) {
+    state.inspectedStoreIndex = index
+    state.inspectedIndex = state.history[index].length - 1
   }
 }
 
 function reset (state) {
-  state.history = []
+  const stores = state.initial
+  state.history = stores.map(s => [])
   state.inspectedIndex = state.activeIndex = -1
+  state.activeIndex = stores.map(s => -1)
 }
 
 function escapeStringForRegExp (str) {
@@ -91,9 +106,12 @@ function escapeStringForRegExp (str) {
 }
 
 const getters = {
-  inspectedState ({ base, history, inspectedIndex }) {
-    const entry = history[inspectedIndex]
+  inspectedState ({ base, history, inspectedIndex, inspectedStoreIndex }) {
     const res = {}
+    let entry
+    try {
+      entry = history[inspectedStoreIndex][inspectedIndex]
+    } catch (e) {}
 
     if (entry) {
       res.mutation = {
@@ -102,7 +120,13 @@ const getters = {
       }
     }
 
-    const snapshot = parse(entry ? entry.snapshot : base)
+    let snapshot
+    if (entry) {
+      snapshot = parse(entry.snapshot)
+    } else if (base) {
+      snapshot = parse(base[inspectedStoreIndex])
+    }
+
     if (snapshot) {
       res.state = snapshot.state
       res.getters = snapshot.getters
@@ -111,8 +135,16 @@ const getters = {
     return res
   },
 
-  filteredHistory ({ history, filterRegex }) {
-    return history.filter(entry => filterRegex.test(entry.mutation.type))
+  inspectedStore ({ history, inspectedStoreIndex }) {
+    return history[inspectedStoreIndex] || []
+  },
+
+  filteredHistory ({ history, inspectedStoreIndex, filterRegex }, getters) {
+    return getters.inspectedStore.filter(entry => filterRegex.test(entry.mutation.type))
+  },
+
+  storeCount ({ initial }) {
+    return initial ? initial.length : 0
   }
 }
 

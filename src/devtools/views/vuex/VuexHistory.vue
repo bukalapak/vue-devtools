@@ -44,7 +44,7 @@
       <div
         ref="baseEntry"
         class="entry list-item"
-        :class="{ active: activeIndex === -1, inspected: inspectedIndex === -1 }"
+        :class="{ active: activeIndex[inspectedStoreIndex] === -1, inspected: inspectedIndex === -1 }"
         @click="inspect(null)"
       >
         <span class="mutation-type">Base State</span>
@@ -157,13 +157,18 @@ export default {
   computed: {
     ...mapState('vuex', [
       'enabled',
-      'history',
       'lastCommit',
       'inspectedIndex',
-      'activeIndex',
       'filterRegex',
-      'filterRegexInvalid'
+      'filterRegexInvalid',
+      'activeIndex',
+      'inspectedStoreIndex',
+      'history'
     ]),
+
+    ...mapState('vuex', {
+      history: state => state.history[state.inspectedStoreIndex],
+    }),
 
     ...mapGetters('vuex', [
       'filteredHistory'
@@ -192,7 +197,7 @@ export default {
     ]),
 
     isActive (entry) {
-      return this.activeIndex === this.history.indexOf(entry)
+      return this.activeIndex[this.inspectedStoreIndex] === this.history.indexOf(entry)
     },
 
     isInspected (entry) {

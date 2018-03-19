@@ -1,5 +1,6 @@
 import Vue from 'vue'
 import store from './store'
+import store1 from './store1'
 import Target from './Target.vue'
 import Other from './Other.vue'
 import Counter from './Counter.vue'
@@ -7,6 +8,7 @@ import NativeTypes from './NativeTypes.vue'
 import Events from './Events.vue'
 import MyClass from './MyClass.js'
 import Router from './Router.vue'
+import Random from './Random.vue'
 import router from './router'
 
 let items = []
@@ -37,6 +39,17 @@ new Vue({
     }
   }
 }).$mount('#app')
+
+// another vue app with store
+new Vue({
+  store: store1,
+  render (h) {
+    return h('div', null, [
+      h('h2', 'Second app with store!'),
+      h(Random)
+    ])
+  }
+}).$mount('#secondApp')
 
 // custom element instance
 const ce = document.querySelector('#shadow')

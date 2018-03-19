@@ -108,7 +108,7 @@ function connect () {
   if (hook.store) {
     initVuexBackend(hook, bridge)
   } else {
-    hook.once('vuex:init', store => {
+    hook.on('vuex:init', store => {
       initVuexBackend(hook, bridge)
     })
   }
